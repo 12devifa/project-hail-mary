@@ -1,43 +1,114 @@
-<div style="text-align: right; margin-bottom: 10px;">
-  <button class="btn" onclick="setLanguage('en')" style="padding: 5px 10px; font-size: 10px;">ENGLISH</button>
-  <button class="btn" onclick="setLanguage('es')" style="padding: 5px 10px; font-size: 10px;">ESPAÑOL</button>
-</div>
-
-<script>
-  let currentLang = 'es'; // Por defecto español, como te gusta
-
-  const translations = {
-    en: {
-      title: "ERIDIAN MISSION LOG",
-      subtitle: "Final Project: Applied Artificial Intelligence",
-      labels: ["STELLAR OBJECT", "VELOCITY", "CONSTANT", "ANOMALY"],
-      btns: ["GENERATE LOG", "LOAD DATA"],
-      screens: ["DR. GRACE REPORT", "ROCKY ANALYSIS"],
-      wait: "Waiting...",
-      grace: (obj, vel, cnst, anom) => `LOG: Approaching ${obj} at ${vel}.\n${cnst} variance detected.\nStatus: ${anom}.\nEarth is waiting.`,
-      rocky: (obj, anom) => `Rocky looks: Amaze! ${obj} is big light!\nYou watch, I do. Grace scared? No scared, I here.\n${anom} threat? Bad! We fix! Fist bump! 👊`
-    },
-    es: {
-      title: "REGISTRO DE MISIÓN",
-      subtitle: "Proyecto Final: Inteligencia Artificial Aplicada",
-      labels: ["OBJETO ESTELAR", "VELOCIDAD", "CONSTANTE", "ANOMALÍA"],
-      btns: ["GENERAR REPORTE", "CARGAR DATOS"],
-      screens: ["REPORTE DR. GRACE", "ANÁLISIS DE ROCKY"],
-      wait: "Esperando...",
-      grace: (obj, vel, cnst, anom) => `REGISTRO: Aproximación a ${obj} a ${vel}.\nVariación en ${cnst} detectada.\nEstado: ${anom}.\nLa Tierra espera resultados.`,
-      rocky: (obj, anom) => `Rocky dice: ¡Asombro! ¡${obj} es luz grande!\n¿Grace asustado? No asustado, yo aquí.\n¿Amenaza ${anom}? ¡Mal! Nosotros arreglamos. ¡Choque de puños! 👊`
-    }
-  };
-
-  function setLanguage(lang) {
-    currentLang = lang;
-    const t = translations[lang];
-    document.querySelector('.title').innerText = t.title;
-    document.querySelector('.subtitle').innerText = t.subtitle;
-    // Actualiza etiquetas y botones... (el código completo manejará esto)
-    document.getElementById('outMain').innerText = t.wait;
-    document.getElementById('outRocky').innerText = t.wait;
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Project Hail Mary | Mission Log</title>
+<style>
+  :root{
+    --bg-1:#02040a; --bg-2:#03111a; --neon: #58ffd6; --neon-2: #b7ff5a;
+    --glass-border: rgba(255,255,255,0.12);
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", "Roboto Mono", monospace;
   }
-  
-  // Tu función generate ahora usará currentLang para decidir qué texto mostrar
+  html,body{
+    height:100%; margin:0; font-family: var(--mono);
+    background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    color: #dfffee; display: flex; justify-content: center; align-items: center; overflow: hidden;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0;
+    background-image: radial-gradient(1px 1px at 10% 20%, white, transparent), radial-gradient(1.5px 1.5px at 50% 50%, white, transparent);
+    background-size: 250px 250px; opacity: 0.2;
+  }
+  .card{
+    width: min(900px, 95vw); border-radius: 14px; padding: 30px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(15px); position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); z-index: 1;
+  }
+  .lang-switcher { position: absolute; top: 20px; right: 30px; display: flex; gap: 10px; }
+  .title{ font-size: 32px; color: var(--neon); margin-bottom: 5px; font-weight: 800; letter-spacing: 2px; text-shadow: 0 0 10px rgba(88,255,214,0.3); }
+  .title:hover { animation: glitch 0.3s infinite; }
+  .form{ display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;}
+  .field{ background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(88,255,214,0.1); }
+  label{ font-size: 9px; color: var(--neon); display: block; margin-bottom: 5px; opacity: 0.7; }
+  input{ background: transparent; border: none; color: white; width: 100%; outline: none; font-family: var(--mono); font-size: 15px; }
+  .actions{ display: flex; gap: 15px; margin: 25px 0; }
+  .btn{ 
+    padding: 10px 20px; border-radius: 8px; border: 1px solid var(--neon);
+    background: rgba(88,255,214,0.05); color: var(--neon); cursor: pointer; font-weight: bold;
+    transition: all 0.3s; font-family: var(--mono);
+  }
+  .btn:hover:not(:disabled) { background: var(--neon); color: black; box-shadow: 0 0 20px var(--neon); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .outputs{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .screen-label { font-size: 10px; margin-bottom: 8px; color: rgba(255,255,255,0.4); }
+  .screen{ background: rgba(0,0,0,0.6); padding: 20px; border-radius: 10px; border: 1px solid rgba(88,255,214,0.15); min-height: 160px; font-size: 14px; line-height: 1.6; position: relative; }
+  .screen.rocky{ color: var(--neon-2); border-color: rgba(183,255,90,0.15); }
+  .cursor { display: inline-block; width: 8px; height: 15px; background: currentColor; margin-left: 4px; animation: blink 1s infinite; vertical-align: middle; }
+  @keyframes blink { 50% { opacity: 0; } }
+  @keyframes glitch { 0% { transform: translate(0); } 25% { transform: translate(-2px, 2px); } 50% { transform: translate(2px, -2px); } 100% { transform: translate(0); } }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lang-switcher">
+    <button class="btn" style="font-size: 10px; padding: 5px 10px;" onclick="setLang('en')">EN</button>
+    <button class="btn" style="font-size: 10px; padding: 5px 10px;" onclick="setLang('es')">ES</button>
+  </div>
+  <div class="title" id="t-main">REGISTRO DE MISIÓN</div>
+  <div class="subtitle" id="t-sub" style="font-size: 12px; opacity: 0.6;">Proyecto Final: IA Aplicada</div>
+  <div class="form">
+    <div class="field"><label id="l-obj">OBJETO ESTELAR</label><input type="text" id="obj" placeholder="Tau Ceti"></div>
+    <div class="field"><label id="l-vel">VELOCIDAD</label><input type="text" id="vel" placeholder="0.93c"></div>
+    <div class="field"><label id="l-con">CONSTANTE</label><input type="text" id="const" placeholder="Luz Petrova"></div>
+    <div class="field"><label id="l-ano">ANOMALÍA</label><input type="text" id="anom" placeholder="Crítica"></div>
+  </div>
+  <div class="actions">
+    <button id="mainBtn" class="btn" onclick="generate()">GENERAR REPORTE</button>
+    <button class="btn" id="loadBtn" style="border-color: #444; color: #666;" onclick="loadData()">CARGAR DATOS</button>
+  </div>
+  <div class="outputs">
+    <div><div class="screen-label" id="s-grace">DR. GRACE REPORT</div><div class="screen" id="outMain">Esperando...</div></div>
+    <div><div class="screen-label" id="s-rocky">ROCKY ANALYSIS</div><div class="screen rocky" id="outRocky">Esperando...</div></div>
+  </div>
+</div>
+<script>
+  let cur = 'es';
+  const texts = {
+    es: { t: "REGISTRO DE MISIÓN", s: "Proyecto Final: IA Aplicada", l: ["OBJETO ESTELAR", "VELOCIDAD", "CONSTANTE", "ANOMALÍA"], b: ["GENERAR REPORTE", "CARGAR DATOS"], wait: "Esperando...", g: "REPORTE DR. GRACE", r: "ANÁLISIS DE ROCKY" },
+    en: { t: "MISSION LOG", s: "Final Project: Applied AI", l: ["STELLAR OBJECT", "VELOCITY", "CONSTANT", "ANOMALY"], b: ["GENERATE REPORT", "LOAD DATA"], wait: "Waiting...", g: "DR. GRACE REPORT", r: "ROCKY ANALYSIS" }
+  };
+  function setLang(l) {
+    cur = l; const d = texts[l];
+    document.getElementById('t-main').innerText = d.t; document.getElementById('t-sub').innerText = d.s;
+    document.getElementById('l-obj').innerText = d.l[0]; document.getElementById('l-vel').innerText = d.l[1];
+    document.getElementById('l-con').innerText = d.l[2]; document.getElementById('l-ano').innerText = d.l[3];
+    document.getElementById('mainBtn').innerText = d.b[0]; document.getElementById('loadBtn').innerText = d.b[1];
+    document.getElementById('s-grace').innerText = d.g; document.getElementById('s-rocky').innerText = d.r;
+    document.getElementById('outMain').innerText = d.wait; document.getElementById('outRocky').innerText = d.wait;
+  }
+  function loadData() {
+    const isEs = cur === 'es';
+    document.getElementById('obj').value = isEs ? "Sistema Tau Ceti" : "Tau Ceti System";
+    document.getElementById('vel').value = "0.93c";
+    document.getElementById('const').value = isEs ? "Luz Petrova" : "Petrova Light";
+    document.getElementById('anom').value = isEs ? "Crítica (Astrófago)" : "Critical (Astrophage)";
+  }
+  async function typeEffect(el, txt) {
+    el.innerHTML = ""; const c = document.createElement("span"); c.className = "cursor";
+    for (let i = 0; i <= txt.length; i++) { el.innerHTML = txt.substring(0, i); el.appendChild(c); await new Promise(r => setTimeout(r, Math.random() * 30 + 15)); }
+  }
+  async function generate() {
+    const btn = document.getElementById('mainBtn'); btn.disabled = true;
+    const o = document.getElementById('obj').value || "---";
+    const v = document.getElementById('vel').value || "0.00c";
+    const c = document.getElementById('const').value || "---";
+    const a = document.getElementById('anom').value || "---";
+    const gT = cur === 'es' ? `REGISTRO: Aproximación a ${o} a ${v}.\nVariación en ${c} detectada.\nEstado: ${a}.\nLa Tierra espera.` : `LOG: Approaching ${o} at ${v}.\n${c} variance detected.\nStatus: ${a}.\nEarth is waiting.`;
+    const rT = cur === 'es' ? `Rocky dice: ¡Asombro! ¡${o} es luz grande!\n¿Grace asustado? No asustado, yo aquí.\n¿Amenaza ${a}? ¡Mal! Nosotros arreglamos. ¡Choque de puños! 👊` : `Rocky looks: Amaze! ${o} is big light!\nYou watch, I do. Grace scared? No scared, I here.\nFist bump! 👊`;
+    await Promise.all([typeEffect(document.getElementById('outMain'), gT), typeEffect(document.getElementById('outRocky'), rT)]);
+    btn.disabled = false;
+  }
 </script>
+</body>
+</html>
